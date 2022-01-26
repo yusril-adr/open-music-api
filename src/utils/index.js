@@ -1,15 +1,10 @@
 // eslint-disable-next-line camelcase
 const MapDBToModel = {
   song({
-    id, title, year, genre, performer, duration, album_id: albumId,
+    album_id: albumId, ...args
   }) {
     return {
-      id,
-      title,
-      year,
-      performer,
-      genre,
-      duration,
+      ...args,
       albumId,
     };
   },
