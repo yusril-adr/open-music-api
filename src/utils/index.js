@@ -8,6 +8,12 @@ const MapDBToModel = {
       albumId,
     };
   },
+  playlistSongs(playlist, songs) {
+    return {
+      ...playlist,
+      songs,
+    };
+  },
 };
 
 module.exports = MapDBToModel;
