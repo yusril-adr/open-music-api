@@ -33,10 +33,10 @@ class AuthenticationsHandler {
     return response;
   }
 
-  async putAuthenticationHandler(request) {
-    this._validator.validatePutAuthenticationPayload(request.payload);
+  async putAuthenticationHandler({ payload }) {
+    this._validator.validatePutAuthenticationPayload(payload);
 
-    const { refreshToken } = request.payload;
+    const { refreshToken } = payload;
     await this._authenticationsService.verifyRefreshToken(refreshToken);
     const { id } = this._tokenManager.verifyRefreshToken(refreshToken);
 

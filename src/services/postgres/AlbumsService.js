@@ -52,8 +52,8 @@ class AlbumsService {
       text: 'SELECT * FROM songs WHERE album_id = $1',
       values: [id],
     };
-    const result = await this._pool.query(query);
-    return result.rows;
+    const { rows } = await this._pool.query(query);
+    return rows;
   }
 
   async editAlbumById(id, { name, year }) {
