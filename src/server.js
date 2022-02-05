@@ -1,25 +1,29 @@
 require('dotenv').config();
 
+const path = require('path');
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const Inert = require('@hapi/inert');
 const ClientError = require('./exceptions/ClientError');
 
 // Albums
 const albums = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
+// Covers
+const CoversService = require('./services/storage/CoversService');
 
 // Songs
 const songs = require('./api/songs');
 const SongsService = require('./services/postgres/SongsService');
 const SongsValidator = require('./validator/songs');
 
-// users
+// Users
 const users = require('./api/users');
 const UsersService = require('./services/postgres/UsersService');
 const UsersValidator = require('./validator/users');
 
-// authentications
+// Authentications
 const authentications = require('./api/authentications');
 const AuthenticationsService = require('./services/postgres/AuthenticationsService');
 const TokenManager = require('./tokenize/TokenManager');
@@ -30,7 +34,7 @@ const playlists = require('./api/playlists');
 const PlaylistsService = require('./services/postgres/PlaylistsService');
 const PlaylistsValidator = require('./validator/playlists');
 
-// collaborations
+// Collaborations
 const collaborations = require('./api/collaborations');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 const CollaborationsValidator = require('./validator/collaborations');
@@ -51,14 +55,17 @@ const init = async () => {
     },
   });
 
-  // registrasi plugin eksternal
+  // External Plugin Registration
   await server.register([
     {
       plugin: Jwt,
     },
+    {
+      plugin: Inert,
+    },
   ]);
 
-  // mendefinisikan strategy autentikasi jwt
+  // Define auth strategy with jwt
   server.auth.strategy('openmusic_jwt', 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
@@ -75,8 +82,9 @@ const init = async () => {
     }),
   });
 
-  // registrasi plugin
+  // Plugin Registration
   const albumsService = new AlbumsService();
+  const coversService = new CoversService(path.resolve(__dirname, 'api/albums/covers'));
   const songsService = new SongsService();
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
@@ -87,7 +95,8 @@ const init = async () => {
     {
       plugin: albums,
       options: {
-        service: albumsService,
+        albumsService,
+        coversService,
         validator: AlbumsValidator,
       },
     },
@@ -140,41 +149,52 @@ const init = async () => {
   ]);
 
   server.ext('onPreResponse', (request, h) => {
-    // mendapatkan konteks response dari request
+    // Get response context from request
     const { response } = request;
 
-    // Jika error dari Custom Client Error atau dari JWT Error
-    if (response instanceof ClientError || response.message === 'Missing authentication') {
-      // membuat response baru dari response toolkit sesuai kebutuhan error handling
+    // If error is instance of Custom Client Error or JWT Error or Inert Max File Size Error
+    if (
+      response instanceof ClientError || response.message === 'Missing authentication' || `${response.message}`.startsWith('Payload content length greater than maximum allowed')
+    ) {
+      // Create new response from response toolkit as error handling
       const newResponse = h.response({
         status: 'fail',
         message: response.message,
       });
 
-      // response.output.statusCode didapat dari JWT Error
+      // response.output.statusCode is from JWT Error
       newResponse.code(response.statusCode || response.output.statusCode);
       return newResponse;
     }
 
     if (response instanceof Error) {
+      // eslint-disable-next-line no-console
+      console.error(response.message);
+
+      let message;
+      if (response.statusCode === 404 || response.output.statusCode === 404) {
+        message = 'Maaf, endpoint yang anda minta tidak ditemukan.';
+      } else {
+        message = 'Maaf, terjadi kegagalan pada server kami.';
+      }
+
       // Server ERROR!
       const newResponse = h.response({
         status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
+        message,
       });
-      newResponse.code(500);
-      // eslint-disable-next-line no-console
-      console.error(response.message);
+      newResponse.code(response.statusCode || response.output.statusCode || 500);
+
       return newResponse;
     }
 
-    // jika bukan Error, lanjutkan dengan response sebelumnya (tanpa terintervensi)
+    // If not Error, continue with the response (without intervention)
     return response.continue || response;
   });
 
   await server.start();
   // eslint-disable-next-line no-console
-  console.log(`Server berjalan pada ${server.info.uri}`);
+  console.log(`Server running on ${server.info.uri}`);
 };
 
 init();
