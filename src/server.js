@@ -44,6 +44,9 @@ const _exports = require('./api/exports');
 const ProducerService = require('./services/rabbitmq/ProducerService');
 const ExportsValidator = require('./validator/exports');
 
+// Cache
+const CacheService = require('./services/redis/CacheService');
+
 const init = async () => {
   const server = Hapi.server({
     port: process.env.PORT,
@@ -83,7 +86,8 @@ const init = async () => {
   });
 
   // Plugin Registration
-  const albumsService = new AlbumsService();
+  const cacheService = new CacheService();
+  const albumsService = new AlbumsService(cacheService);
   const coversService = new CoversService(path.resolve(__dirname, 'api/albums/covers'));
   const songsService = new SongsService();
   const usersService = new UsersService();

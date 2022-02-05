@@ -30,14 +30,18 @@ class AlbumsHandler {
     return response;
   }
 
-  async getAlbumsHandler() {
-    const albums = await this._albumsService.getAlbums();
-    return {
+  async getAlbumsHandler(request, h) {
+    const { isFromCache, data } = await this._albumsService.getAlbums();
+
+    const response = h.response({
       status: 'success',
       data: {
-        albums,
+        albums: data,
       },
-    };
+    });
+
+    if (isFromCache) response.header('X-Data-Source', 'cache');
+    return response;
   }
 
   async getAlbumByIdHandler(request) {
@@ -126,15 +130,19 @@ class AlbumsHandler {
     return response;
   }
 
-  async getAlbumLikesHandler(request) {
+  async getAlbumLikesHandler(request, h) {
     const { id } = request.params;
-    const likes = await this._albumsService.getAlbumLikesByAlbumId(id);
-    return {
+    const { isFromCache, data } = await this._albumsService.getAlbumLikesByAlbumId(id);
+
+    const response = h.response({
       status: 'success',
       data: {
-        likes,
+        likes: data,
       },
-    };
+    });
+
+    if (isFromCache) response.header('X-Data-Source', 'cache');
+    return response;
   }
 }
 
