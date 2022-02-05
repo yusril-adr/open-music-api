@@ -8,7 +8,8 @@
     "start-dev": "nodemon ./src/server.js",
     "lint": "eslint ./src",
     "migrate": "node-pg-migrate",
-    "resetDB": "node ./src/reset-db"
+    "resetDB": "node ./src/reset-db",
+    "graph": "git log --all --oneline --decorate --graph"
   },
   "repository": {
     "type": "git",

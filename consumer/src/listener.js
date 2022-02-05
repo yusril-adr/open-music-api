@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 class Listener {
   constructor(playlistsService, mailSender) {
     this._playlistsService = playlistsService;
