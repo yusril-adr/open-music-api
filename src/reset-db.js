@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 
 const resetDb = async (pool) => {
   // Delete All Data
-  await pool.query('TRUNCATE users, songs, albums, authentications, playlists, playlist_songs, playlist_song_activities, collaborations');
+  await pool.query('TRUNCATE users, songs, albums, authentications, playlists, playlist_songs, playlist_song_activities, collaborations, user_album_likes');
 
   // Add Unknown Albums
   // For undefined albumId in table songs

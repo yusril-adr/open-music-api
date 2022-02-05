@@ -10,6 +10,8 @@ class AlbumsHandler {
     this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
     this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
     this.postUploadCoverHandler = this.postUploadCoverHandler.bind(this);
+    this.postAlbumLikeHandler = this.postAlbumLikeHandler.bind(this);
+    this.getAlbumLikesHandler = this.getAlbumLikesHandler.bind(this);
   }
 
   async postAlbumHandler(request, h) {
@@ -86,7 +88,7 @@ class AlbumsHandler {
       this._coversService.deleteCover(coverUrl);
     }
 
-    await this._albumsService.addCoverByAlbumId(fileLocation, id);
+    await this._albumsService.uploadCoverByAlbumId(fileLocation, id);
 
     const response = h.response({
       status: 'success',
@@ -94,6 +96,45 @@ class AlbumsHandler {
     });
     response.code(201);
     return response;
+  }
+
+  async postAlbumLikeHandler(request, h) {
+    const { id: credentialId } = request.auth.credentials;
+    const { id: albumId } = request.params;
+
+    // Check is album exist or not
+    await this._albumsService.getAlbumById(albumId);
+
+    const likeId = await this._albumsService.getAlbumLike(credentialId, albumId);
+
+    let message;
+    if (likeId) {
+      await this._albumsService.deleteAlbumLike(likeId);
+
+      message = 'Album berhasil batal disukai.';
+    } else {
+      await this._albumsService.addAlbumLike(credentialId, albumId);
+
+      message = 'Album berhasil disukai.';
+    }
+
+    const response = h.response({
+      status: 'success',
+      message,
+    });
+    response.code(201);
+    return response;
+  }
+
+  async getAlbumLikesHandler(request) {
+    const { id } = request.params;
+    const likes = await this._albumsService.getAlbumLikesByAlbumId(id);
+    return {
+      status: 'success',
+      data: {
+        likes,
+      },
+    };
   }
 }
 
